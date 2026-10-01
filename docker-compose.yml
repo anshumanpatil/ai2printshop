@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: postgres_ai2printshop
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ai2printshop
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: Uncomment to run initialization scripts on first startup
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # Optional: Visual database management dashboard
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin_dashboard
+    restart: always
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
