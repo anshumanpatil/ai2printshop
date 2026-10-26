@@ -3,6 +3,8 @@ import { Suspense } from "react"
 import { listLocales } from "@lib/data/locales"
 import { getLocale } from "@lib/data/locale-actions"
 import { listRegions } from "@lib/data/regions"
+import { listCategories } from "@lib/data/categories"
+import { STORE_NAME } from "@lib/brand"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CartButton from "@modules/layout/components/cart-button"
@@ -10,10 +12,11 @@ import Search from "@modules/layout/components/search"
 import SideMenu from "@modules/layout/components/side-menu"
 
 export default async function Nav() {
-  const [regions, locales, currentLocale] = await Promise.all([
+  const [regions, locales, currentLocale, categories] = await Promise.all([
     listRegions().then((regions: StoreRegion[]) => regions),
     listLocales(),
     getLocale(),
+    listCategories(),
   ])
 
   return (
@@ -24,6 +27,19 @@ export default async function Nav() {
             <div className="h-full">
               <SideMenu regions={regions} locales={locales} currentLocale={currentLocale} />
             </div>
+            <div className="hidden medium:flex items-center gap-x-6 ml-6">
+              {(categories ?? [])
+                .filter((c) => !c.parent_category)
+                .map((c) => (
+                  <LocalizedClientLink
+                    key={c.id}
+                    href={`/categories/${c.handle}`}
+                    className="hover:text-ui-fg-base"
+                  >
+                    {c.name}
+                  </LocalizedClientLink>
+                ))}
+            </div>
           </div>
 
           <div className="flex items-center h-full">
@@ -32,7 +48,7 @@ export default async function Nav() {
               className="txt-compact-xlarge-plus hover:text-ui-fg-base uppercase"
               data-testid="nav-store-link"
             >
-              Medusa Store
+              {STORE_NAME}
             </LocalizedClientLink>
           </div>
 

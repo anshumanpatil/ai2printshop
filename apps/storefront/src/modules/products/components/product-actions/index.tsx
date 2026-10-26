@@ -10,6 +10,7 @@ import { isEqual } from "lodash"
 import { useParams, usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProductPrice from "../product-price"
+import QuantityPricing from "../quantity-pricing"
 import MobileActions from "./mobile-actions"
 import { useRouter } from "next/navigation"
 
@@ -155,6 +156,12 @@ export default function ProductActions({
                   </div>
                 )
               })}
+              <QuantityPricing
+                product={product}
+                options={options}
+                onSelect={setOptionValue}
+                disabled={!!disabled || isAdding}
+              />
               <Divider />
             </div>
           )}
@@ -177,10 +184,19 @@ export default function ProductActions({
           data-testid="add-product-button"
         >
           {!selectedVariant
-            ? "Select variant"
+            ? "Select all options"
             : !inStock || !isValidVariant
             ? "Out of stock"
             : "Add to cart"}
+        </Button>
+        <Button
+          variant="secondary"
+          className="w-full h-10"
+          disabled
+          title="Online design editor arrives in Phase 2"
+          data-testid="upload-design-button"
+        >
+          Upload / design online (coming soon)
         </Button>
         <MobileActions
           product={product}
