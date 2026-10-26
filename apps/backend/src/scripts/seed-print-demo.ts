@@ -9,6 +9,7 @@
 import {
   createProductCategoriesWorkflow,
   createProductsWorkflow,
+  updateProductsWorkflow,
 } from "@medusajs/medusa/core-flows"
 import {
   ContainerRegistrationKeys,
@@ -16,6 +17,11 @@ import {
   ProductStatus,
 } from "@medusajs/framework/utils"
 import type { ExecArgs } from "@medusajs/framework/types"
+
+// Mockups are generated into the storefront's public/products folder
+const IMAGE_BASE_URL = process.env.DEMO_IMAGE_BASE_URL ?? "http://localhost:8000/products"
+const productImages = (handle: string) =>
+  [1, 2, 3].map((n) => ({ url: `${IMAGE_BASE_URL}/${handle}-${n}.png` }))
 
 type OptionDef = {
   title: string
@@ -234,13 +240,26 @@ export default async function seedPrintDemo({ container }: ExecArgs) {
   })
   const { data: existingProducts } = await query.graph({
     entity: "product",
-    fields: ["handle"],
+    fields: ["id", "handle", "thumbnail"],
   })
   const takenHandles = new Set(existingProducts.map((product) => product.handle))
 
+  // Refresh imagery on products created by an earlier run (e.g. placeholders)
+  for (const existing of existingProducts) {
+    const images = PRODUCTS.some((p) => p.handle === existing.handle)
+      ? productImages(existing.handle as string)
+      : null
+    if (images && existing.thumbnail !== images[0].url) {
+      await updateProductsWorkflow(container).run({
+        input: { selector: { id: existing.id as string }, update: { thumbnail: images[0].url, images } },
+      })
+      logger.info(`Updated images for ${existing.handle}`)
+    }
+  }
+
   const products = PRODUCTS.filter((product) => !takenHandles.has(product.handle)).map(
     (product) => {
-      const image = `https://placehold.co/800x800/png?text=${encodeURIComponent(product.title)}`
+      const images = productImages(product.handle)
       const category = categories.find((c) => c.name === product.category)
 
       return {
@@ -249,8 +268,8 @@ export default async function seedPrintDemo({ container }: ExecArgs) {
         subtitle: product.subtitle,
         description: product.description,
         status: ProductStatus.PUBLISHED,
-        thumbnail: image,
-        images: [{ url: image }],
+        thumbnail: images[0].url,
+        images,
         shipping_profile_id: shippingProfile.id,
         category_ids: category ? [category.id as string] : [],
         sales_channels: [{ id: salesChannel.id }],
